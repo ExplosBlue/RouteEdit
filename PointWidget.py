@@ -1,12 +1,14 @@
 import re
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtWidgets
+
 Qt = QtCore.Qt
 
-class pointEditorWidget(QtWidgets.QWidget):
-    def __init__(self, arc, parent=None):
-        QtWidgets.QWidget.__init__(self, parent=parent)
 
-        self.arc = arc
+class PointEditorWidget(QtWidgets.QWidget):
+    def __init__(self):
+        QtWidgets.QWidget.__init__(self)
+
+        self.archiveContents = []
         self.fileLoaded = False
         self.currentLoadedFile = ""
         self.selectedFile = ""
@@ -15,30 +17,55 @@ class pointEditorWidget(QtWidgets.QWidget):
         # Create Widgets
         self.fileSelector = QtWidgets.QComboBox()
         self.scrollArea = QtWidgets.QScrollArea()
-        self.pointEntries = pointEntryContainer()
-        self.header = header()
+        self.pointEntries = PointEntryTable()
+
+        # Default Widgets to disabled
+        self.fileSelector.setDisabled(True)
+        self.scrollArea.setDisabled(True)
 
         # Setup Scroll Area
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setWidget(self.pointEntries)
 
-        # Setup file selector
-        for file in self.arc:
-            self.fileSelector.addItem(str(file.name)[5:-4])
-
+        # Setup Signals
         self.fileSelector.currentIndexChanged.connect(self.fileIndexChanged)
 
         # add widgets to layout
-        self.layout.addWidget(self.fileSelector)
-        self.layout.addWidget(self.header)
+        self.layout.addWidget(self.fileSelector, 0, Qt.AlignTop)
         self.layout.addWidget(self.scrollArea)
+
+    def loadData(self, archiveContents):
+        self.archiveContents = archiveContents
+
+        QtCore.QObject.blockSignals(self.fileSelector, True)
+
+        # Add elements to file selector drop-down
+        for file in self.archiveContents:
+            self.fileSelector.addItem(str(file.name)[5:-4])
+
+        QtCore.QObject.blockSignals(self.fileSelector, False)
+
+        # Enable the Ui
+        self.scrollArea.setDisabled(False)
+        self.fileSelector.setDisabled(False)
 
         # load initial file
         self.fileIndexChanged()
 
+    def closeData(self):
+        self.archiveContents = []
+        self.fileLoaded = False
+        self.currentLoadedFile = ""
+        self.selectedFile = ""
+
+        self.pointEntries.clearTable()
+
+        self.fileSelector.setDisabled(True)
+        self.scrollArea.setDisabled(True)
+
+        self.fileSelector.clear()
 
     def fileIndexChanged(self):
-
         # store the currently selected file's name
         self.selectedFile = "point" + self.fileSelector.currentText() + ".csv"
 
@@ -46,18 +73,17 @@ class pointEditorWidget(QtWidgets.QWidget):
         if self.fileLoaded:
             # if a file is already open, store the changes made and close the file
             self.storeChanges()
-            self.pointEntries.reset()
-            self.loadDataFromFile()
+            self.pointEntries.clearTable()
+            self.loadSelectedFile()
         else:
-            self.loadDataFromFile()
+            self.loadSelectedFile()
 
-
-    def loadDataFromFile(self):
+    def loadSelectedFile(self):
 
         dataArray = []
 
         # load the data for the file the user selected
-        for file in self.arc:
+        for file in self.archiveContents:
             if file.name == self.selectedFile:
                 data = file.data
                 data = data.decode('shiftjis')
@@ -76,139 +102,85 @@ class pointEditorWidget(QtWidgets.QWidget):
                 self.fileLoaded = True
                 self.currentLoadedFile = self.selectedFile
 
-
     def storeChanges(self):
-        data = self.pointEntries.pointsToString()
+        data = self.pointEntries.saveContents()
         data = data.encode('shiftjis')
 
-        for file in self.arc:
+        for file in self.archiveContents:
             if str(file.name) == self.currentLoadedFile:
                 file.data = data
 
-    def getArc(self):
+    def getArchiveContents(self):
         self.storeChanges()
-        return self.arc
+        return self.archiveContents
 
-class pointEntryContainer(QtWidgets.QWidget):
-    def __init__(self, parent=None):
-        QtWidgets.QWidget.__init__(self, parent=parent)
-        self.layout = QtWidgets.QVBoxLayout(self)
 
-        self.pointEntries = []
+class PointEntryTable(QtWidgets.QTableWidget):
+    def __init__(self):
+        QtWidgets.QTableWidget.__init__(self)
+
+        # Setup Table Properties
+        self.setColumnCount(9)
+        self.setAlternatingRowColors(True)
+        self.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+
+        # Setup Header Bar
+        header = self.horizontalHeader()
+        header.setStretchLastSection(True)
+        header.setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        self.setHorizontalHeaderItem(0, QtWidgets.QTableWidgetItem("ID"))
+        self.setHorizontalHeaderItem(1, QtWidgets.QTableWidgetItem("Node Name"))
+        self.setHorizontalHeaderItem(2, QtWidgets.QTableWidgetItem("Node Flag"))
+        self.setHorizontalHeaderItem(3, QtWidgets.QTableWidgetItem("Node Unlocks"))
+        self.setHorizontalHeaderItem(4, QtWidgets.QTableWidgetItem("Path Unlocks"))
+        self.setHorizontalHeaderItem(5, QtWidgets.QTableWidgetItem("Pipe Dest"))
+        self.setHorizontalHeaderItem(6, QtWidgets.QTableWidgetItem("Secret Node Unlocks"))
+        self.setHorizontalHeaderItem(7, QtWidgets.QTableWidgetItem("Secret Path Unlocks"))
+        self.setHorizontalHeaderItem(8, QtWidgets.QTableWidgetItem("Unknown"))
+
+        # Hide Row Numbers
+        self.verticalHeader().setVisible(False)
 
     def populate(self, dataArray):
         i = 0
+        # Iterate through each entry in the data array
         while i < len(dataArray):
-            point = pointEntry(dataArray[i])
-            self.layout.addWidget(point)
-            self.pointEntries.append(point)
+            pos = self.rowCount()
+            # Create a row for each entry in the array
+            self.insertRow(pos)
+            # Populate the new row with the contents of that entry in the array
+            self.setItem(pos, 0, QtWidgets.QTableWidgetItem(dataArray[i][0]))  # ID
+            self.setItem(pos, 1, QtWidgets.QTableWidgetItem(dataArray[i][1]))  # Node Name
+            self.setItem(pos, 2, QtWidgets.QTableWidgetItem(dataArray[i][2]))  # Node Flag
+            self.setItem(pos, 3, QtWidgets.QTableWidgetItem(dataArray[i][3]))  # Node Unlocks
+            self.setItem(pos, 4, QtWidgets.QTableWidgetItem(dataArray[i][4]))  # path Unlocks
+            self.setItem(pos, 5, QtWidgets.QTableWidgetItem(dataArray[i][5]))  # Pipe Destination
+            self.setItem(pos, 6, QtWidgets.QTableWidgetItem(dataArray[i][6]))  # Secret Node Unlocks
+            self.setItem(pos, 7, QtWidgets.QTableWidgetItem(dataArray[i][7]))  # Secret Path Unlocks
+            self.setItem(pos, 8, QtWidgets.QTableWidgetItem(dataArray[i][8]))  # Unknown
             i += 1
 
-    def pointsToString(self):
-        temp = []
-        for point in self.pointEntries:
-            temp.append(point.valuesToString())
-        outString = "\r\n".join(temp)
-        outString = outString + "\r\n"
+    def saveContents(self):
+        outData = []
+
+        row = 0
+        # Iterate through each row of the table
+        while row < self.rowCount():
+            col = 0
+            rowData = []
+            # Iterate through each column for the current row
+            while col < 9:
+                # Store the contents of the column
+                rowData.append(self.item(row, col).text())
+                col += 1
+            # Store the contents of each row
+            rowString = ','.join(rowData)
+            outData.append(rowString)
+            row += 1
+
+        outString = "\r\n".join(outData)
         return outString
 
-    def reset(self):
-        self.clearLayout(self.layout)
-        self.pointEntries = [] # f
-
-    def clearLayout(self, layout):
-        while layout.count():
-            child = layout.takeAt(0)
-            if child.widget() is not None:
-                child.widget().deleteLater()
-            elif child.layout() is not None:
-                self.clearLayout(child.layout())
-
-class pointEntry(QtWidgets.QWidget):
-    def __init__(self, data, parent=None):
-        QtWidgets.QWidget.__init__(self, parent=parent)
-        self.layout = QtWidgets.QHBoxLayout(self)
-
-        self.idLabel = QtWidgets.QLabel(data[0])
-        self.nodeName = QtWidgets.QLineEdit(data[1])
-        self.nodeFlag = QtWidgets.QLineEdit(data[2])
-        self.nodeUnlocks = QtWidgets.QLineEdit(data[3])
-        self.pathUnlocks = QtWidgets.QLineEdit(data[4])
-        self.pipeDest = QtWidgets.QLineEdit(data[5])
-        self.seNodeUnlocks = QtWidgets.QLineEdit(data[6])
-        self.sePathUnlocks = QtWidgets.QLineEdit(data[7])
-        self.unk1 = QtWidgets.QLineEdit(data[8])
-
-        # if data[2] == 'stop':
-        #     self.stopFlag.setChecked(True)
-
-        self.setMaximumHeight(75)
-
-        self.layout.addWidget(self.idLabel)
-        self.layout.addWidget(self.nodeName)
-        self.layout.addWidget(self.nodeFlag)
-        self.layout.addWidget(self.nodeUnlocks)
-        self.layout.addWidget(self.pathUnlocks)
-        self.layout.addWidget(self.pipeDest)
-        self.layout.addWidget(self.seNodeUnlocks)
-        self.layout.addWidget(self.sePathUnlocks)
-        self.layout.addWidget(self.unk1)
-
-        # set background colour
-        pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, QtGui.QColor(249, 249, 249))
-        self.setAutoFillBackground(True)
-        self.setPalette(pal)
-
-    def valuesToString(self):
-        temp = []
-        temp.append(self.idLabel.text())
-        temp.append(self.nodeName.text())
-        temp.append(self.nodeFlag.text())
-        # if self.stopFlag.isChecked():
-        #     temp.append('stop')
-        # else:
-        #     temp.append('')
-        temp.append(self.nodeUnlocks.text())
-        temp.append(self.pathUnlocks.text())
-        temp.append(self.pipeDest.text())
-        temp.append(self.seNodeUnlocks.text())
-        temp.append(self.sePathUnlocks.text())
-        temp.append(self.unk1.text())
-        output = ','.join(temp)
-        output.encode('shiftjis')
-
-        return output
-
-class header(QtWidgets.QWidget):
-    def __init__(self, parent=None):
-        QtWidgets.QWidget.__init__(self, parent=parent)
-        self.layout = QtWidgets.QHBoxLayout(self)
-
-        idLabel = QtWidgets.QLabel('ID')
-        nodeNameLabel = QtWidgets.QLabel('Node Name')
-        stopFlagLabel = QtWidgets.QLabel('Stop Flag')
-        nodeUnlocksLabel = QtWidgets.QLabel('Node Unlocks')
-        pathUnlocksLabel = QtWidgets.QLabel('Path Unlocks')
-        pipeDestLabel = QtWidgets.QLabel('Pipe Destination')
-        seNodeUnlocksLabel = QtWidgets.QLabel('Secondary Node Unlocks')
-        sePathUnlocksLabel = QtWidgets.QLabel('Secondary Path Unlocks')
-        unk1Label = QtWidgets.QLabel('Unk1')
-
-        self.setMaximumHeight(75)
-
-        self.layout.addWidget(idLabel)
-        self.layout.addWidget(nodeNameLabel)
-        self.layout.addWidget(stopFlagLabel)
-        self.layout.addWidget(nodeUnlocksLabel)
-        self.layout.addWidget(pathUnlocksLabel)
-        self.layout.addWidget(pipeDestLabel)
-        self.layout.addWidget(seNodeUnlocksLabel)
-        self.layout.addWidget(sePathUnlocksLabel)
-        self.layout.addWidget(unk1Label)
-
-        # set background colour
-        pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, QtGui.QColor(249, 249, 249))
-        self.setAutoFillBackground(True)
-        self.setPalette(pal)
+    def clearTable(self):
+        while self.rowCount() > 0:
+            self.removeRow(0)

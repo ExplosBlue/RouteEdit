@@ -1,12 +1,13 @@
-import re
 from PyQt5 import QtCore, QtGui, QtWidgets
+
 Qt = QtCore.Qt
 
-class bossPathEditorWidget(QtWidgets.QWidget):
-    def __init__(self, arc, parent=None):
+
+class BossPathEditorWidget(QtWidgets.QWidget):
+    def __init__(self, parent=None):
         QtWidgets.QWidget.__init__(self, parent=parent)
 
-        self.arc = arc
+        self.archiveContents = []
         self.fileLoaded = False
         self.currentLoadedFile = ""
         self.selectedFile = ""
@@ -15,25 +16,54 @@ class bossPathEditorWidget(QtWidgets.QWidget):
         # Create Widgets
         self.fileSelector = QtWidgets.QComboBox()
         self.scrollArea = QtWidgets.QScrollArea()
-        self.BossPathEntries = bossPathEntryContainer()
+        self.BossPathEntries = BossPathEntryContainer()
 
         # Setup Scroll Area
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setWidget(self.BossPathEntries)
 
-        # Setup file selector
-        for file in self.arc:
-            if not str(file.name).find('worldIn'):
-                self.fileSelector.addItem(str(file.name)[7:-4])
+        # Default Widgets to disabled
+        self.fileSelector.setDisabled(True)
+        self.scrollArea.setDisabled(True)
 
+        # Setup Signals
         self.fileSelector.currentIndexChanged.connect(self.fileIndexChanged)
 
         # add widgets to layout
         self.layout.addWidget(self.fileSelector)
         self.layout.addWidget(self.scrollArea)
 
+    def loadData(self, archiveContents):
+        self.archiveContents = archiveContents
+
+        QtCore.QObject.blockSignals(self.fileSelector, True)
+
+        # Add elements to file selector drop-down
+        for file in self.archiveContents:
+            if not str(file.name).find('worldIn'):
+                self.fileSelector.addItem(str(file.name)[7:-4])
+
+        QtCore.QObject.blockSignals(self.fileSelector, False)
+
+        # Enable the Ui
+        self.scrollArea.setDisabled(False)
+        self.fileSelector.setDisabled(False)
+
         # load initial file
         self.fileIndexChanged()
+
+    def closeData(self):
+        self.archiveContents = []
+        self.fileLoaded = False
+        self.currentLoadedFile = ""
+        self.selectedFile = ""
+
+        self.BossPathEntries.reset()
+
+        self.fileSelector.setDisabled(True)
+        self.scrollArea.setDisabled(True)
+
+        self.fileSelector.clear()
 
     def fileIndexChanged(self):
 
@@ -49,13 +79,12 @@ class bossPathEditorWidget(QtWidgets.QWidget):
         else:
             self.loadDataFromFile()
 
-
     def loadDataFromFile(self):
 
         files = []
 
         # load the data for the file the user selected
-        for file in self.arc:
+        for file in self.archiveContents:
             if file.name == "worldIn" + self.selectedFile:
                 files.append(file)
 
@@ -67,7 +96,6 @@ class bossPathEditorWidget(QtWidgets.QWidget):
         self.fileLoaded = True
         self.currentLoadedFile = self.selectedFile
 
-
     def storeChanges(self):
         data = self.BossPathEntries.bossPathToArray()
 
@@ -75,26 +103,27 @@ class bossPathEditorWidget(QtWidgets.QWidget):
 
         for entry in data:
             if str(entry) == "worldIn":
-                for file in self.arc:
+                for file in self.archiveContents:
                     if str(file.name) == "worldIn" + self.currentLoadedFile:
-                        d = str(data[i+1])
+                        d = str(data[i + 1])
                         d = d.encode('shiftjis')
                         file.data = d
 
             elif str(entry) == "toCastle":
-                for file in self.arc:
+                for file in self.archiveContents:
                     if str(file.name) == "toCastle" + self.currentLoadedFile:
-                        d = str(data[i+1])
+                        d = str(data[i + 1])
                         d = d.encode('shiftjis')
                         file.data = d
 
             i += 1
 
-    def getArc(self):
+    def getArchiveContents(self):
         self.storeChanges()
-        return self.arc
+        return self.archiveContents
 
-class bossPathEntryContainer(QtWidgets.QWidget):
+
+class BossPathEntryContainer(QtWidgets.QWidget):
     def __init__(self, parent=None):
         QtWidgets.QWidget.__init__(self, parent=parent)
         self.layout = QtWidgets.QVBoxLayout(self)
@@ -108,26 +137,26 @@ class bossPathEntryContainer(QtWidgets.QWidget):
             if not str(file.name).find("worldIn"):
                 data = file.data
                 data = data.decode('shiftjis')
-                worldIn = worldInEntry(data)
+                worldIn = WorldInEntry(data)
                 self.layout.addWidget(worldIn)
                 self.worldInEntries.append(worldIn)
 
             if not str(file.name).find("toCastle"):
                 data = file.data
                 data = data.decode('shiftjis')
-                toCaslte = toCastleEntry(data)
+                toCaslte = ToCastleEntry(data)
                 self.layout.addWidget(toCaslte)
                 self.toCastleEntries.append(toCaslte)
 
     def bossPathToArray(self):
         temp = []
 
-        if self.worldInEntries != []:
+        if self.worldInEntries:
             for worldIn in self.worldInEntries:
                 temp.append('worldIn')
                 temp.append(worldIn.valuesToString())
 
-        if self.toCastleEntries != []:
+        if self.toCastleEntries:
             for toCastle in self.toCastleEntries:
                 temp.append('toCastle')
                 temp.append(toCastle.valuesToString())
@@ -147,7 +176,8 @@ class bossPathEntryContainer(QtWidgets.QWidget):
             elif child.layout() is not None:
                 self.clearLayout(child.layout())
 
-class worldInEntry(QtWidgets.QWidget):
+
+class WorldInEntry(QtWidgets.QWidget):
     def __init__(self, data, parent=None):
         QtWidgets.QWidget.__init__(self, parent=parent)
         self.layout = QtWidgets.QHBoxLayout(self)
@@ -206,7 +236,8 @@ class worldInEntry(QtWidgets.QWidget):
                 self.entries[-1].deleteLater()
             self.entries = self.entries[:-1]
 
-class toCastleEntry(QtWidgets.QWidget):
+
+class ToCastleEntry(QtWidgets.QWidget):
     def __init__(self, data, parent=None):
         QtWidgets.QWidget.__init__(self, parent=parent)
         self.layout = QtWidgets.QHBoxLayout(self)

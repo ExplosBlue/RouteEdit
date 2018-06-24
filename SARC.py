@@ -30,7 +30,6 @@
 ############ Imports ############
 
 import struct
-from bytes import bytes_to_string
 
 #################################
 
@@ -575,3 +574,12 @@ class SARC_Archive(FileArchive):
 
         # Return the data
         return fileData
+
+
+def bytes_to_string(data, offset=0, charWidth=1, encoding='utf-8'):
+    # Thanks RoadrunnerWMC
+    end = data.find(b'\0' * charWidth, offset)
+    if end == -1:
+        return data[offset:].decode(encoding)
+
+    return data[offset:end].decode(encoding)

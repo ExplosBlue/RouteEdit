@@ -1,12 +1,14 @@
 import re
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtWidgets
+
 Qt = QtCore.Qt
 
-class routeEditorWidget(QtWidgets.QWidget):
-    def __init__(self, arc, parent=None):
+
+class RouteEditorWidget(QtWidgets.QWidget):
+    def __init__(self, parent=None):
         QtWidgets.QWidget.__init__(self, parent=parent)
 
-        self.arc = arc
+        self.archiveContents = []
         self.fileLoaded = False
         self.currentLoadedFile = ""
         self.selectedFile = ""
@@ -15,27 +17,53 @@ class routeEditorWidget(QtWidgets.QWidget):
         # Create Widgets
         self.fileSelector = QtWidgets.QComboBox()
         self.scrollArea = QtWidgets.QScrollArea()
-        self.routeEntries = routeEntryContainer()
-        self.header = header()
+        self.routeEntries = RouteEntryTable()
+
+        # Default Widgets to disabled
+        self.fileSelector.setDisabled(True)
+        self.scrollArea.setDisabled(True)
 
         # Setup Scroll Area
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setWidget(self.routeEntries)
 
-        # Setup file selector
-        for file in self.arc:
-            self.fileSelector.addItem(str(file.name)[5:-4])
-
+        # Setup Signals
         self.fileSelector.currentIndexChanged.connect(self.fileIndexChanged)
 
         # add widgets to layout
         self.layout.addWidget(self.fileSelector)
-        self.layout.addWidget(self.header)
         self.layout.addWidget(self.scrollArea)
+
+    def loadData(self, archiveContents):
+        self.archiveContents = archiveContents
+
+        QtCore.QObject.blockSignals(self.fileSelector, True)
+
+        # Add elements to file selector drop-down
+        for file in self.archiveContents:
+            self.fileSelector.addItem(str(file.name)[5:-4])
+
+        QtCore.QObject.blockSignals(self.fileSelector, False)
+
+        # Enable the Ui
+        self.scrollArea.setDisabled(False)
+        self.fileSelector.setDisabled(False)
 
         # load initial file
         self.fileIndexChanged()
 
+    def closeData(self):
+        self.archiveContents = []
+        self.fileLoaded = False
+        self.currentLoadedFile = ""
+        self.selectedFile = ""
+
+        self.routeEntries.clearTable()
+
+        self.fileSelector.setDisabled(True)
+        self.scrollArea.setDisabled(True)
+
+        self.fileSelector.clear()
 
     def fileIndexChanged(self):
         # store the currently selected file's name
@@ -45,18 +73,17 @@ class routeEditorWidget(QtWidgets.QWidget):
         if self.fileLoaded:
             # if a file is already open, store the changes made and close the file
             self.storeChanges()
-            self.routeEntries.reset()
+            self.routeEntries.clearTable()
             self.loadDataFromFile()
         else:
             self.loadDataFromFile()
-
 
     def loadDataFromFile(self):
 
         dataArray = []
 
         # load the data for the file the user selected
-        for file in self.arc:
+        for file in self.archiveContents:
             if file.name == self.selectedFile:
                 data = file.data
                 data = data.decode('shiftjis')
@@ -75,102 +102,130 @@ class routeEditorWidget(QtWidgets.QWidget):
                 self.fileLoaded = True
                 self.currentLoadedFile = self.selectedFile
 
-
     def storeChanges(self):
-        data = self.routeEntries.routesToString()
+        data = self.routeEntries.saveContents()
         data = data.encode('shiftjis')
 
-        for file in self.arc:
+        for file in self.archiveContents:
             if str(file.name) == self.currentLoadedFile:
                 file.data = data
 
-    def getArc(self):
+    def getArchiveContents(self):
         self.storeChanges()
-        return self.arc
+        return self.archiveContents
 
-class routeEntryContainer(QtWidgets.QWidget):
-    def __init__(self, parent=None):
-        QtWidgets.QWidget.__init__(self, parent=parent)
-        self.layout = QtWidgets.QVBoxLayout(self)
 
-        self.routeEntries = []
+class RouteEntryTable(QtWidgets.QTableWidget):
+    def __init__(self):
+        QtWidgets.QTableWidget.__init__(self)
+
+        # Setup Table Properties
+        self.setColumnCount(3)
+        self.setAlternatingRowColors(True)
+        self.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+
+        # Setup Header Bar
+        header = self.horizontalHeader()
+        header.setStretchLastSection(True)
+        header.setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        self.setHorizontalHeaderItem(0, QtWidgets.QTableWidgetItem("Path"))
+        self.setHorizontalHeaderItem(1, QtWidgets.QTableWidgetItem("Action"))
+        self.setHorizontalHeaderItem(2, QtWidgets.QTableWidgetItem("Sound"))
+
+        # Hide Row Numbers
+        self.verticalHeader().setVisible(False)
 
     def populate(self, dataArray):
         i = 0
+        # Iterate through each entry in the data array
         while i < len(dataArray):
-            route = routeEntry(dataArray[i])
-            self.layout.addWidget(route)
-            self.routeEntries.append(route)
+            pos = self.rowCount()
+            # Create a row for each entry in the array
+            self.insertRow(pos)
+            # Populate the new row with the contents of that entry in the array
+            self.setItem(pos, 0, QtWidgets.QTableWidgetItem(dataArray[i][0]))  # Path
+            self.setCellWidget(pos, 1, ActionEditor(dataArray[i][1]))  # Action
+            self.setCellWidget(pos, 2, SoundEffectsEditor(dataArray[i][2]))  # Sound
             i += 1
 
-    def routesToString(self):
-        temp = []
-        for route in self.routeEntries:
-            temp.append(route.valuesToString())
-        outString = "\r\n".join(temp)
-        outString = outString + "\r\n"
+    def saveContents(self):
+        outData = []
+
+        row = 0
+        # Iterate through each row of the table
+        while row < self.rowCount():
+            col = 0
+            rowData = []
+            # Iterate through each column for the current row
+            while col < 3:
+                # Store the contents of the column
+                if col == 0:
+                    rowData.append(self.item(row, col).text())
+                else:
+                    rowData.append(self.cellWidget(row, col).getValue())
+                col += 1
+            # Store the contents of each row
+            rowString = ','.join(rowData)
+            outData.append(rowString)
+            row += 1
+
+        outString = "\r\n".join(outData)
         return outString
 
-    def reset(self):
-        self.clearLayout(self.layout)
-        self.routeEntries = [] # f
+    def clearTable(self):
+        while self.rowCount() > 0:
+            self.removeRow(0)
 
-    def clearLayout(self, layout):
-        while layout.count():
-            child = layout.takeAt(0)
-            if child.widget() is not None:
-                child.widget().deleteLater()
-            elif child.layout() is not None:
-                self.clearLayout(child.layout())
 
-class routeEntry(QtWidgets.QWidget):
+class SoundEffectsEditor(QtWidgets.QComboBox):
     def __init__(self, data, parent=None):
         QtWidgets.QWidget.__init__(self, parent=parent)
-        self.layout = QtWidgets.QHBoxLayout(self)
 
-        self.pathName = QtWidgets.QLineEdit(data[0])
-        self.movementType = QtWidgets.QLineEdit(data[1])
-        self.soundEffect = QtWidgets.QLineEdit(data[2])
+        # Create a dictionary to translate the sfx names from jp to english
+        self.sfx = {}
+        with open('RouteEditData/SoundEffects.txt', 'rt', encoding="utf-8-sig") as f:
+            for line in f:
+                (jp, eng) = line.split(':')
+                eng = str(eng).strip('\n')
+                self.sfx[jp] = eng
 
-        self.setMaximumHeight(75)
+        # Add translated sound effect names to the combobox
+        for jp, eng in self.sfx.items():
+            self.addItem(eng)
 
-        self.layout.addWidget(self.pathName)
-        self.layout.addWidget(self.movementType)
-        self.layout.addWidget(self.soundEffect)
+        # Go to the correct index
+        for jp, eng in self.sfx.items():
+            if not str(data).find(jp):
+                self.setCurrentIndex(self.findText(eng))
 
-        # set background colour
-        pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, QtGui.QColor(249, 249, 249))
-        self.setAutoFillBackground(True)
-        self.setPalette(pal)
+    def getValue(self):
+        for jp, eng in self.sfx.items():
+            if not self.currentText().find(eng):
+                return jp
 
-    def valuesToString(self):
-        temp = []
-        temp.append(self.pathName.text())
-        temp.append(self.movementType.text())
-        temp.append(self.soundEffect.text())
-        output = ','.join(temp)
-        output.encode('shiftjis')
 
-        return output
-
-class header(QtWidgets.QWidget):
-    def __init__(self, parent=None):
+class ActionEditor(QtWidgets.QComboBox):
+    def __init__(self, data, parent=None):
         QtWidgets.QWidget.__init__(self, parent=parent)
-        self.layout = QtWidgets.QHBoxLayout(self)
 
-        pathName = QtWidgets.QLabel('Path')
-        movementType = QtWidgets.QLabel('Movement Type')
-        soundEffect = QtWidgets.QLabel('Sound Effect')
+        # Create a dictionary to translate the action names from jp to english
+        self.actions = {}
+        with open('RouteEditData/Actions.txt', 'rt', encoding="utf-8-sig") as f:
+            for line in f:
+                (jp, eng) = line.split(':')
+                eng = str(eng).strip('\n')
+                self.actions[jp] = eng
 
-        self.setMaximumHeight(75)
+        # Add translated action names to the combobox
+        for jp, eng in self.actions.items():
+            self.addItem(eng)
 
-        self.layout.addWidget(pathName)
-        self.layout.addWidget(movementType)
-        self.layout.addWidget(soundEffect)
+        # Go to the correct index
+        for jp, eng in self.actions.items():
+            if not str(data).find(jp):
+                self.setCurrentIndex(self.findText(eng))
 
-        # set background colour
-        pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, QtGui.QColor(249, 249, 249))
-        self.setAutoFillBackground(True)
-        self.setPalette(pal)
+    def getValue(self):
+        for jp, eng in self.actions.items():
+            if not self.currentText().find(eng):
+                return jp
