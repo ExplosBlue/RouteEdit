@@ -1,9 +1,13 @@
 # RouteEdit
-##An editor for NSMB2's routeInfo file
-Uses Python 3 and PyQt5
+## An editor for NSMB2's routeInfo file
+###### Uses Python 3 and PyQt5
 ----------------------------------------------------------------
+
+### Usage
+run routeEdit.py, load routeInfo.sarc and edit.
+
 ### Credits
-#### RoutEdit
+#### RouteEdit
 * Explos -- Creator
 
 #### SARCLib

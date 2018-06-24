@@ -1,5 +1,5 @@
 ﻿"じゅうたん":Carpet
-"道":Road
+"道":Dirt
 "雲":Cloud
 "雪":Snow
 "草":Grass
