@@ -1,5 +1,5 @@
 import re
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtWidgets, QtGui
 
 Qt = QtCore.Qt
 
@@ -18,6 +18,12 @@ class RouteEditorWidget(QtWidgets.QWidget):
         self.fileSelector = QtWidgets.QComboBox()
         self.scrollArea = QtWidgets.QScrollArea()
         self.routeEntries = RouteEntryTable()
+        self.addRowButton = QtWidgets.QPushButton()
+        self.delRowButton = QtWidgets.QPushButton()
+
+        # Add Icons
+        self.addRowButton.setIcon(QtGui.QIcon('RouteEditData/icons/plus.png'))
+        self.delRowButton.setIcon(QtGui.QIcon('RouteEditData/icons/minus.png'))
 
         # Default Widgets to disabled
         self.fileSelector.setDisabled(True)
@@ -29,9 +35,16 @@ class RouteEditorWidget(QtWidgets.QWidget):
 
         # Setup Signals
         self.fileSelector.currentIndexChanged.connect(self.fileIndexChanged)
+        self.addRowButton.pressed.connect(self.addRow)
+        self.delRowButton.pressed.connect(self.delRow)
 
         # add widgets to layout
-        self.layout.addWidget(self.fileSelector)
+        hLayout = QtWidgets.QHBoxLayout()
+        hLayout.addWidget(self.fileSelector, 1, Qt.AlignVCenter)
+        hLayout.addWidget(self.addRowButton, 0, Qt.AlignVCenter)
+        hLayout.addWidget(self.delRowButton, 0, Qt.AlignVCenter)
+
+        self.layout.addLayout(hLayout)
         self.layout.addWidget(self.scrollArea)
 
     def loadData(self, archiveContents):
@@ -114,6 +127,12 @@ class RouteEditorWidget(QtWidgets.QWidget):
         self.storeChanges()
         return self.archiveContents
 
+    def addRow(self):
+        self.routeEntries.addRow()
+
+    def delRow(self):
+        self.routeEntries.delRow()
+
 
 class RouteEntryTable(QtWidgets.QTableWidget):
     def __init__(self):
@@ -144,9 +163,20 @@ class RouteEntryTable(QtWidgets.QTableWidget):
             self.insertRow(pos)
             # Populate the new row with the contents of that entry in the array
             self.setItem(pos, 0, QtWidgets.QTableWidgetItem(dataArray[i][0]))  # Path
-            self.setCellWidget(pos, 1, ActionEditor(dataArray[i][1]))  # Action
-            self.setCellWidget(pos, 2, SoundEffectsEditor(dataArray[i][2]))  # Sound
+            self.setCellWidget(pos, 1, ActionEditor(dataArray[i][1]))          # Action
+            self.setCellWidget(pos, 2, SoundEffectsEditor(dataArray[i][2]))    # Sound
             i += 1
+
+    def addRow(self):
+        self.insertRow(self.currentRow()+1)
+
+        # Initialise the row
+        self.setItem(self.currentRow()+1, 0, QtWidgets.QTableWidgetItem())  # Path
+        self.setCellWidget(self.currentRow()+1, 1, ActionEditor())          # Action
+        self.setCellWidget(self.currentRow()+1, 2, SoundEffectsEditor())    # Sound
+
+    def delRow(self):
+        self.removeRow(self.currentRow())
 
     def saveContents(self):
         outData = []
@@ -178,7 +208,7 @@ class RouteEntryTable(QtWidgets.QTableWidget):
 
 
 class SoundEffectsEditor(QtWidgets.QComboBox):
-    def __init__(self, data, parent=None):
+    def __init__(self, data=None, parent=None):
         QtWidgets.QWidget.__init__(self, parent=parent)
 
         # Create a dictionary to translate the sfx names from jp to english
@@ -193,7 +223,10 @@ class SoundEffectsEditor(QtWidgets.QComboBox):
         for jp, eng in self.sfx.items():
             self.addItem(eng)
 
-        # Go to the correct index
+        if data is not None:
+            self.getIndexByName(data)
+
+    def getIndexByName(self, data):
         for jp, eng in self.sfx.items():
             if not str(data).find(jp):
                 self.setCurrentIndex(self.findText(eng))
@@ -205,7 +238,7 @@ class SoundEffectsEditor(QtWidgets.QComboBox):
 
 
 class ActionEditor(QtWidgets.QComboBox):
-    def __init__(self, data, parent=None):
+    def __init__(self, data=None, parent=None):
         QtWidgets.QWidget.__init__(self, parent=parent)
 
         # Create a dictionary to translate the action names from jp to english
@@ -220,7 +253,10 @@ class ActionEditor(QtWidgets.QComboBox):
         for jp, eng in self.actions.items():
             self.addItem(eng)
 
-        # Go to the correct index
+        if data is not None:
+            self.getIndexByName(data)
+
+    def getIndexByName(self, data):
         for jp, eng in self.actions.items():
             if not str(data).find(jp):
                 self.setCurrentIndex(self.findText(eng))

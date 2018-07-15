@@ -1,5 +1,5 @@
 import re
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtWidgets, QtGui
 
 Qt = QtCore.Qt
 
@@ -18,6 +18,12 @@ class PointEditorWidget(QtWidgets.QWidget):
         self.fileSelector = QtWidgets.QComboBox()
         self.scrollArea = QtWidgets.QScrollArea()
         self.pointEntries = PointEntryTable()
+        self.addRowButton = QtWidgets.QPushButton()
+        self.delRowButton = QtWidgets.QPushButton()
+
+        # Add Icons
+        self.addRowButton.setIcon(QtGui.QIcon('RouteEditData/icons/plus.png'))
+        self.delRowButton.setIcon(QtGui.QIcon('RouteEditData/icons/minus.png'))
 
         # Default Widgets to disabled
         self.fileSelector.setDisabled(True)
@@ -29,9 +35,17 @@ class PointEditorWidget(QtWidgets.QWidget):
 
         # Setup Signals
         self.fileSelector.currentIndexChanged.connect(self.fileIndexChanged)
+        self.addRowButton.pressed.connect(self.addRow)
+        self.delRowButton.pressed.connect(self.delRow)
+
 
         # add widgets to layout
-        self.layout.addWidget(self.fileSelector, 0, Qt.AlignTop)
+        hLayout = QtWidgets.QHBoxLayout()
+        hLayout.addWidget(self.fileSelector, 1, Qt.AlignVCenter)
+        hLayout.addWidget(self.addRowButton, 0, Qt.AlignVCenter)
+        hLayout.addWidget(self.delRowButton, 0, Qt.AlignVCenter)
+
+        self.layout.addLayout(hLayout)
         self.layout.addWidget(self.scrollArea)
 
     def loadData(self, archiveContents):
@@ -114,6 +128,12 @@ class PointEditorWidget(QtWidgets.QWidget):
         self.storeChanges()
         return self.archiveContents
 
+    def addRow(self):
+        self.pointEntries.addRow()
+
+    def delRow(self):
+        self.pointEntries.delRow()
+
 
 class PointEntryTable(QtWidgets.QTableWidget):
     def __init__(self):
@@ -159,6 +179,23 @@ class PointEntryTable(QtWidgets.QTableWidget):
             self.setItem(pos, 7, QtWidgets.QTableWidgetItem(dataArray[i][7]))  # Secret Path Unlocks
             self.setItem(pos, 8, QtWidgets.QTableWidgetItem(dataArray[i][8]))  # Unknown
             i += 1
+
+    def addRow(self):
+        self.insertRow(self.currentRow()+1)
+
+        # Initialise the row
+        self.setItem(self.currentRow()+1, 0, QtWidgets.QTableWidgetItem())  # ID
+        self.setItem(self.currentRow()+1, 1, QtWidgets.QTableWidgetItem())  # Node Name
+        self.setItem(self.currentRow()+1, 2, QtWidgets.QTableWidgetItem())  # Node Flag
+        self.setItem(self.currentRow()+1, 3, QtWidgets.QTableWidgetItem())  # Node Unlocks
+        self.setItem(self.currentRow()+1, 4, QtWidgets.QTableWidgetItem())  # path Unlocks
+        self.setItem(self.currentRow()+1, 5, QtWidgets.QTableWidgetItem())  # Pipe Destination
+        self.setItem(self.currentRow()+1, 6, QtWidgets.QTableWidgetItem())  # Secret Node Unlocks
+        self.setItem(self.currentRow()+1, 7, QtWidgets.QTableWidgetItem())  # Secret Path Unlocks
+        self.setItem(self.currentRow()+1, 8, QtWidgets.QTableWidgetItem())  # Unknown
+
+    def delRow(self):
+        self.removeRow(self.currentRow())
 
     def saveContents(self):
         outData = []
