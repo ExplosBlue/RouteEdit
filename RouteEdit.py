@@ -1,7 +1,7 @@
 import PointWidget
 import RouteWidget
 import BossPathWidget
-import SARC as SarcLib
+import SarcLib
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 
@@ -109,7 +109,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for file in arcContents:
             newArchive.addFile(file)
 
-        outFile = newArchive.save()
+        outFile = newArchive.save()[0]
 
         fileName = QtWidgets.QFileDialog.getSaveFileName(self, 'Open file', '', 'SARC files (*.sarc)')[0]
 

@@ -38,7 +38,6 @@ class PointEditorWidget(QtWidgets.QWidget):
         self.addRowButton.pressed.connect(self.addRow)
         self.delRowButton.pressed.connect(self.delRow)
 
-
         # add widgets to layout
         hLayout = QtWidgets.QHBoxLayout()
         hLayout.addWidget(self.fileSelector, 1, Qt.AlignVCenter)
@@ -181,18 +180,18 @@ class PointEntryTable(QtWidgets.QTableWidget):
             i += 1
 
     def addRow(self):
-        self.insertRow(self.currentRow()+1)
+        self.insertRow(self.currentRow() + 1)
 
         # Initialise the row
-        self.setItem(self.currentRow()+1, 0, QtWidgets.QTableWidgetItem())  # ID
-        self.setItem(self.currentRow()+1, 1, QtWidgets.QTableWidgetItem())  # Node Name
-        self.setItem(self.currentRow()+1, 2, QtWidgets.QTableWidgetItem())  # Node Flag
-        self.setItem(self.currentRow()+1, 3, QtWidgets.QTableWidgetItem())  # Node Unlocks
-        self.setItem(self.currentRow()+1, 4, QtWidgets.QTableWidgetItem())  # path Unlocks
-        self.setItem(self.currentRow()+1, 5, QtWidgets.QTableWidgetItem())  # Pipe Destination
-        self.setItem(self.currentRow()+1, 6, QtWidgets.QTableWidgetItem())  # Secret Node Unlocks
-        self.setItem(self.currentRow()+1, 7, QtWidgets.QTableWidgetItem())  # Secret Path Unlocks
-        self.setItem(self.currentRow()+1, 8, QtWidgets.QTableWidgetItem())  # Unknown
+        self.setItem(self.currentRow() + 1, 0, QtWidgets.QTableWidgetItem())  # ID
+        self.setItem(self.currentRow() + 1, 1, QtWidgets.QTableWidgetItem())  # Node Name
+        self.setItem(self.currentRow() + 1, 2, QtWidgets.QTableWidgetItem())  # Node Flag
+        self.setItem(self.currentRow() + 1, 3, QtWidgets.QTableWidgetItem())  # Node Unlocks
+        self.setItem(self.currentRow() + 1, 4, QtWidgets.QTableWidgetItem())  # path Unlocks
+        self.setItem(self.currentRow() + 1, 5, QtWidgets.QTableWidgetItem())  # Pipe Destination
+        self.setItem(self.currentRow() + 1, 6, QtWidgets.QTableWidgetItem())  # Secret Node Unlocks
+        self.setItem(self.currentRow() + 1, 7, QtWidgets.QTableWidgetItem())  # Secret Path Unlocks
+        self.setItem(self.currentRow() + 1, 8, QtWidgets.QTableWidgetItem())  # Unknown
 
     def delRow(self):
         self.removeRow(self.currentRow())
