@@ -1,7 +1,7 @@
 ﻿道:Road
 砂:Sandy Road
 雪:Snowy Road
-木:Woody Road
+木:Wooden Road
 氷:Icy Road
 雲:Cloudy Road
 石:Stony Road
