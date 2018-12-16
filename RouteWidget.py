@@ -139,7 +139,7 @@ class RouteEntryTable(QtWidgets.QTableWidget):
         QtWidgets.QTableWidget.__init__(self)
 
         # Setup Table Properties
-        self.setColumnCount(3)
+        self.setColumnCount(2)
         self.setAlternatingRowColors(True)
         self.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
 
@@ -148,8 +148,7 @@ class RouteEntryTable(QtWidgets.QTableWidget):
         header.setStretchLastSection(True)
         header.setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
         self.setHorizontalHeaderItem(0, QtWidgets.QTableWidgetItem("Path"))
-        self.setHorizontalHeaderItem(1, QtWidgets.QTableWidgetItem("Action"))
-        self.setHorizontalHeaderItem(2, QtWidgets.QTableWidgetItem("Sound"))
+        self.setHorizontalHeaderItem(1, QtWidgets.QTableWidgetItem("Type"))
 
         # Hide Row Numbers
         self.verticalHeader().setVisible(False)
@@ -163,8 +162,7 @@ class RouteEntryTable(QtWidgets.QTableWidget):
             self.insertRow(pos)
             # Populate the new row with the contents of that entry in the array
             self.setItem(pos, 0, QtWidgets.QTableWidgetItem(dataArray[i][0]))  # Path
-            self.setCellWidget(pos, 1, ActionEditor(dataArray[i][1]))          # Action
-            self.setCellWidget(pos, 2, SoundEffectsEditor(dataArray[i][2]))    # Sound
+            self.setCellWidget(pos, 1, TypeEditor(dataArray[i][1]))          # Type
             i += 1
 
     def addRow(self):
@@ -172,8 +170,7 @@ class RouteEntryTable(QtWidgets.QTableWidget):
 
         # Initialise the row
         self.setItem(self.currentRow()+1, 0, QtWidgets.QTableWidgetItem())  # Path
-        self.setCellWidget(self.currentRow()+1, 1, ActionEditor())          # Action
-        self.setCellWidget(self.currentRow()+1, 2, SoundEffectsEditor())    # Sound
+        self.setCellWidget(self.currentRow()+1, 1, TypeEditor())          # Type
 
     def delRow(self):
         self.removeRow(self.currentRow())
@@ -184,22 +181,15 @@ class RouteEntryTable(QtWidgets.QTableWidget):
         row = 0
         # Iterate through each row of the table
         while row < self.rowCount():
-            col = 0
             rowData = []
-            # Iterate through each column for the current row
-            while col < 3:
-                # Store the contents of the column
-                if col == 0:
-                    rowData.append(self.item(row, col).text())
-                else:
-                    rowData.append(self.cellWidget(row, col).getValue())
-                col += 1
-            # Store the contents of each row
-            rowString = ','.join(rowData)
+            rowData.append(self.item(row, 0).text())
+            rowData.append(self.cellWidget(row, 1).getValue())
+
+            rowString = ','.join(rowData) + ','
             outData.append(rowString)
             row += 1
 
-        outString = "\r\n".join(outData)
+        outString = "\r\n".join(outData) + "\r\n"
         return outString
 
     def clearTable(self):
@@ -207,61 +197,36 @@ class RouteEntryTable(QtWidgets.QTableWidget):
             self.removeRow(0)
 
 
-class SoundEffectsEditor(QtWidgets.QComboBox):
+class TypeEditor(QtWidgets.QComboBox):
     def __init__(self, data=None, parent=None):
         QtWidgets.QWidget.__init__(self, parent=parent)
 
-        # Create a dictionary to translate the sfx names from jp to english
-        self.sfx = {}
-        with open('RouteEditData/SoundEffects.txt', 'rt', encoding="utf-8-sig") as f:
+        # Create a dictionary to translate the types names from jp to english
+        self.types = {}
+        with open('RouteEditData/Types.txt', 'rt', encoding="utf-8-sig") as f:
             for line in f:
                 (jp, eng) = line.split(':')
                 eng = str(eng).strip('\n')
-                self.sfx[jp] = eng
+                self.types[jp] = eng
 
-        # Add translated sound effect names to the combobox
-        for jp, eng in self.sfx.items():
+        # Add translated types names to the combobox
+        for jp, eng in self.types.items():
             self.addItem(eng)
 
         if data is not None:
             self.getIndexByName(data)
 
     def getIndexByName(self, data):
-        for jp, eng in self.sfx.items():
-            if not str(data).find(jp):
+        items = sorted(list(self.types.items()), key=lambda k: len(k[0]))
+        for jp, eng in items:
+            if jp == data:
                 self.setCurrentIndex(self.findText(eng))
+                break
+
+        else:
+            raise Exception("Unknown Type: %s" % data)
 
     def getValue(self):
-        for jp, eng in self.sfx.items():
-            if not self.currentText().find(eng):
-                return jp
-
-
-class ActionEditor(QtWidgets.QComboBox):
-    def __init__(self, data=None, parent=None):
-        QtWidgets.QWidget.__init__(self, parent=parent)
-
-        # Create a dictionary to translate the action names from jp to english
-        self.actions = {}
-        with open('RouteEditData/Actions.txt', 'rt', encoding="utf-8-sig") as f:
-            for line in f:
-                (jp, eng) = line.split(':')
-                eng = str(eng).strip('\n')
-                self.actions[jp] = eng
-
-        # Add translated action names to the combobox
-        for jp, eng in self.actions.items():
-            self.addItem(eng)
-
-        if data is not None:
-            self.getIndexByName(data)
-
-    def getIndexByName(self, data):
-        for jp, eng in self.actions.items():
-            if not str(data).find(jp):
-                self.setCurrentIndex(self.findText(eng))
-
-    def getValue(self):
-        for jp, eng in self.actions.items():
-            if not self.currentText().find(eng):
+        for jp, eng in self.types.items():
+            if eng == self.currentText():
                 return jp

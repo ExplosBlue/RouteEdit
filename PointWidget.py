@@ -139,7 +139,7 @@ class PointEntryTable(QtWidgets.QTableWidget):
         QtWidgets.QTableWidget.__init__(self)
 
         # Setup Table Properties
-        self.setColumnCount(9)
+        self.setColumnCount(8)
         self.setAlternatingRowColors(True)
         self.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
 
@@ -152,10 +152,9 @@ class PointEntryTable(QtWidgets.QTableWidget):
         self.setHorizontalHeaderItem(2, QtWidgets.QTableWidgetItem("Node Flag"))
         self.setHorizontalHeaderItem(3, QtWidgets.QTableWidgetItem("Node Unlocks"))
         self.setHorizontalHeaderItem(4, QtWidgets.QTableWidgetItem("Path Unlocks"))
-        self.setHorizontalHeaderItem(5, QtWidgets.QTableWidgetItem("Pipe Dest"))
+        self.setHorizontalHeaderItem(5, QtWidgets.QTableWidgetItem("Secret Node Flag"))
         self.setHorizontalHeaderItem(6, QtWidgets.QTableWidgetItem("Secret Node Unlocks"))
         self.setHorizontalHeaderItem(7, QtWidgets.QTableWidgetItem("Secret Path Unlocks"))
-        self.setHorizontalHeaderItem(8, QtWidgets.QTableWidgetItem("Unknown"))
 
         # Hide Row Numbers
         self.verticalHeader().setVisible(False)
@@ -176,7 +175,6 @@ class PointEntryTable(QtWidgets.QTableWidget):
             self.setItem(pos, 5, QtWidgets.QTableWidgetItem(dataArray[i][5]))  # Pipe Destination
             self.setItem(pos, 6, QtWidgets.QTableWidgetItem(dataArray[i][6]))  # Secret Node Unlocks
             self.setItem(pos, 7, QtWidgets.QTableWidgetItem(dataArray[i][7]))  # Secret Path Unlocks
-            self.setItem(pos, 8, QtWidgets.QTableWidgetItem(dataArray[i][8]))  # Unknown
             i += 1
 
     def addRow(self):
@@ -191,7 +189,6 @@ class PointEntryTable(QtWidgets.QTableWidget):
         self.setItem(self.currentRow() + 1, 5, QtWidgets.QTableWidgetItem())  # Pipe Destination
         self.setItem(self.currentRow() + 1, 6, QtWidgets.QTableWidgetItem())  # Secret Node Unlocks
         self.setItem(self.currentRow() + 1, 7, QtWidgets.QTableWidgetItem())  # Secret Path Unlocks
-        self.setItem(self.currentRow() + 1, 8, QtWidgets.QTableWidgetItem())  # Unknown
 
     def delRow(self):
         self.removeRow(self.currentRow())
@@ -205,16 +202,16 @@ class PointEntryTable(QtWidgets.QTableWidget):
             col = 0
             rowData = []
             # Iterate through each column for the current row
-            while col < 9:
+            while col < 8:
                 # Store the contents of the column
                 rowData.append(self.item(row, col).text())
                 col += 1
             # Store the contents of each row
-            rowString = ','.join(rowData)
+            rowString = ','.join(rowData) + ','
             outData.append(rowString)
             row += 1
 
-        outString = "\r\n".join(outData)
+        outString = "\r\n".join(outData) + "\r\n"
         return outString
 
     def clearTable(self):

@@ -1,9 +1,0 @@
-﻿"じゅうたん":Carpet
-"道":Dirt
-"雲":Cloud
-"雪":Snow
-"草":Grass
-"水":Water
-"樽":Wood
-"砂":Sand
-"マンタ":Mushroom

@@ -1,17 +1,19 @@
 import PointWidget
 import RouteWidget
-import BossPathWidget
 import SarcLib
+import yaz0
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 Qt = QtCore.Qt
+CompYaz0, DecompYaz0 = yaz0.getCompressionMethod()
 
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
-        super(MainWindow, self).__init__()
-        self.setWindowTitle('RouteEdit')
+        super().__init__()
+
+        self.setWindowTitle('RouteEdit NSMBU')
         self.setGeometry(500, 500, 1500, 750)
 
         self.saveFile = QtWidgets.QAction(QtGui.QIcon('RouteEditData/icons/save.png'), '&Save', self)
@@ -20,13 +22,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.closeFile = QtWidgets.QAction(QtGui.QIcon('RouteEditData/icons/close.png'), '&Close', self)
 
         self.editor = EditorTabWidget()
+        self.currentFilePath = ''
 
         self.initUi()
 
-        self.currentFilePath = ''
-
     def initUi(self):
-
         self.editor.setDisabled(True)
 
         # setup menu bar
@@ -70,15 +70,21 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(self.editor)
 
     def loadSarc(self):
-        fileName = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', '', 'SARC files (*.sarc)')[0]
-
+        fileName = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', '', 'Map files (*.szs)')[0]
         if fileName == '':
             return
 
         self.currentFilePath = fileName
+        self.setWindowTitle('RouteEdit NSMBU - %s' % self.currentFilePath)
 
         with open(fileName, 'rb') as fileObj:
             data = fileObj.read()
+
+        if data[:4] == b'Yaz0':
+            data = DecompYaz0(data)
+
+        elif data[:4] != b'SARC':
+            return
 
         archive = SarcLib.SARC_Archive(data)
         archive.load(data)
@@ -97,24 +103,23 @@ class MainWindow(QtWidgets.QMainWindow):
         for file in arcContents:
             newArchive.addFile(file)
 
-        outFile = newArchive.save()
-
-        with open(self.currentFilePath, 'wb+') as f:
-            f.write(outFile)
-
-    def saveSarcAs(self):
-        arcContents = self.editor.getDataFromWidgets()
-        newArchive = SarcLib.SARC_Archive()
-
-        for file in arcContents:
-            newArchive.addFile(file)
-
         outFile = newArchive.save()[0]
 
-        fileName = QtWidgets.QFileDialog.getSaveFileName(self, 'Open file', '', 'SARC files (*.sarc)')[0]
+        if self.currentFilePath[-4:] == ".szs":
+            CompYaz0(outFile, self.currentFilePath)
 
-        with open(fileName, 'wb+') as f:
-            f.write(outFile)
+        else:
+            with open(self.currentFilePath, 'wb+') as f:
+                f.write(outFile)
+
+    def saveSarcAs(self):
+        fileName = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file', '', 'Map files (*.szs)')[0]
+        if fileName == '':
+            return
+
+        self.currentFilePath = fileName
+        self.setWindowTitle('RouteEdit NSMBU - %s' % self.currentFilePath)
+        self.saveSarc()
 
     def closeSarc(self):
         closeDialog = QtWidgets.QMessageBox
@@ -128,6 +133,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.closeFile.setDisabled(True)
 
             self.currentFilePath = ''
+            self.setWindowTitle('RouteEdit NSMBU')
 
 
 class EditorTabWidget(QtWidgets.QTabWidget):
@@ -136,44 +142,41 @@ class EditorTabWidget(QtWidgets.QTabWidget):
 
         self.pointEditor = PointWidget.PointEditorWidget()
         self.routeEditor = RouteWidget.RouteEditorWidget()
-        self.bossPathEditor = BossPathWidget.BossPathEditorWidget()
         self.addTab(self.pointEditor, 'Node Unlocks')
         self.addTab(self.routeEditor, 'Path Settings')
-        self.addTab(self.bossPathEditor, 'Boss Path')
+
+        self.files = []
 
     def loadData(self, archiveContents):
         self.closeFile()
 
         pointFiles = []
         routeFiles = []
-        bossPathFiles = []
 
         for file in archiveContents:
-            if not str(file.name).find('point'):
-                pointFiles.append(file)
-            elif not str(file.name).find('route'):
+            if file.name[:5] == 'route':
                 routeFiles.append(file)
-            elif not str(file.name).find('worldIn') or not str(file.name).find('toCastle'):
-                bossPathFiles.append(file)
+            elif file.name[:5] == 'point':
+                pointFiles.append(file)
             else:
-                print('Unknown File')
-                print(file.name)
+                if file.name[-6:] not in [".bfres", ".sharc"] and file.name[-8:] != ".sharcfb":
+                    print('Unknown File')
+                    print(file.name)
+                self.files.append(file)
 
         self.pointEditor.loadData(pointFiles)
         self.routeEditor.loadData(routeFiles)
-        self.bossPathEditor.loadData(bossPathFiles)
 
     def closeFile(self):
         self.pointEditor.closeData()
         self.routeEditor.closeData()
-        self.bossPathEditor.closeData()
+        self.files = []
 
     def getDataFromWidgets(self):
         pointFiles = self.pointEditor.getArchiveContents()
         routeFiles = self.routeEditor.getArchiveContents()
-        bossPathFiles = self.bossPathEditor.getArchiveContents()
 
-        archiveContents = pointFiles + routeFiles + bossPathFiles
+        archiveContents = pointFiles + routeFiles + self.files
 
         return archiveContents
 
