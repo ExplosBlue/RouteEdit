@@ -144,9 +144,9 @@ class BossPathEntryContainer(QtWidgets.QWidget):
             if not str(file.name).find("toCastle"):
                 data = file.data
                 data = data.decode('shiftjis')
-                toCaslte = ToCastleEntry(data)
-                self.layout.addWidget(toCaslte)
-                self.toCastleEntries.append(toCaslte)
+                toCastle = ToCastleEntry(data)
+                self.layout.addWidget(toCastle)
+                self.toCastleEntries.append(toCastle)
 
     def bossPathToArray(self):
         temp = []

@@ -152,10 +152,10 @@ class PointEntryTable(QtWidgets.QTableWidget):
         self.setHorizontalHeaderItem(2, QtWidgets.QTableWidgetItem("Node Flag"))
         self.setHorizontalHeaderItem(3, QtWidgets.QTableWidgetItem("Node Unlocks"))
         self.setHorizontalHeaderItem(4, QtWidgets.QTableWidgetItem("Path Unlocks"))
-        self.setHorizontalHeaderItem(5, QtWidgets.QTableWidgetItem("Pipe Dest"))
+        self.setHorizontalHeaderItem(5, QtWidgets.QTableWidgetItem("Secret Node Flag"))
         self.setHorizontalHeaderItem(6, QtWidgets.QTableWidgetItem("Secret Node Unlocks"))
         self.setHorizontalHeaderItem(7, QtWidgets.QTableWidgetItem("Secret Path Unlocks"))
-        self.setHorizontalHeaderItem(8, QtWidgets.QTableWidgetItem("Unknown"))
+        self.setHorizontalHeaderItem(8, QtWidgets.QTableWidgetItem("Revealed Path Connections"))
 
         # Hide Row Numbers
         self.verticalHeader().setVisible(False)
@@ -172,11 +172,11 @@ class PointEntryTable(QtWidgets.QTableWidget):
             self.setItem(pos, 1, QtWidgets.QTableWidgetItem(dataArray[i][1]))  # Node Name
             self.setItem(pos, 2, QtWidgets.QTableWidgetItem(dataArray[i][2]))  # Node Flag
             self.setItem(pos, 3, QtWidgets.QTableWidgetItem(dataArray[i][3]))  # Node Unlocks
-            self.setItem(pos, 4, QtWidgets.QTableWidgetItem(dataArray[i][4]))  # path Unlocks
-            self.setItem(pos, 5, QtWidgets.QTableWidgetItem(dataArray[i][5]))  # Pipe Destination
+            self.setItem(pos, 4, QtWidgets.QTableWidgetItem(dataArray[i][4]))  # Path Unlocks
+            self.setItem(pos, 5, QtWidgets.QTableWidgetItem(dataArray[i][5]))  # Secret Node Flag
             self.setItem(pos, 6, QtWidgets.QTableWidgetItem(dataArray[i][6]))  # Secret Node Unlocks
             self.setItem(pos, 7, QtWidgets.QTableWidgetItem(dataArray[i][7]))  # Secret Path Unlocks
-            self.setItem(pos, 8, QtWidgets.QTableWidgetItem(dataArray[i][8]))  # Unknown
+            self.setItem(pos, 8, QtWidgets.QTableWidgetItem(dataArray[i][8]))  # Revealed Path Connections
             i += 1
 
     def addRow(self):
@@ -187,11 +187,11 @@ class PointEntryTable(QtWidgets.QTableWidget):
         self.setItem(self.currentRow() + 1, 1, QtWidgets.QTableWidgetItem())  # Node Name
         self.setItem(self.currentRow() + 1, 2, QtWidgets.QTableWidgetItem())  # Node Flag
         self.setItem(self.currentRow() + 1, 3, QtWidgets.QTableWidgetItem())  # Node Unlocks
-        self.setItem(self.currentRow() + 1, 4, QtWidgets.QTableWidgetItem())  # path Unlocks
-        self.setItem(self.currentRow() + 1, 5, QtWidgets.QTableWidgetItem())  # Pipe Destination
+        self.setItem(self.currentRow() + 1, 4, QtWidgets.QTableWidgetItem())  # Path Unlocks
+        self.setItem(self.currentRow() + 1, 5, QtWidgets.QTableWidgetItem())  # Secret Node Flag
         self.setItem(self.currentRow() + 1, 6, QtWidgets.QTableWidgetItem())  # Secret Node Unlocks
         self.setItem(self.currentRow() + 1, 7, QtWidgets.QTableWidgetItem())  # Secret Path Unlocks
-        self.setItem(self.currentRow() + 1, 8, QtWidgets.QTableWidgetItem())  # Unknown
+        self.setItem(self.currentRow() + 1, 8, QtWidgets.QTableWidgetItem())  # Revealed Path Connections
 
     def delRow(self):
         self.removeRow(self.currentRow())

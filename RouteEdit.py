@@ -97,7 +97,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for file in arcContents:
             newArchive.addFile(file)
 
-        outFile = newArchive.save()
+        outFile = newArchive.save()[0]
 
         with open(self.currentFilePath, 'wb+') as f:
             f.write(outFile)
