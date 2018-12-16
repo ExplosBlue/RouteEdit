@@ -80,10 +80,11 @@ class MainWindow(QtWidgets.QMainWindow):
         with open(fileName, 'rb') as fileObj:
             data = fileObj.read()
 
-        if data[:4] == b'Yaz0':
-            data = DecompYaz0(data)
+        if data[:4] != b'Yaz0':
+            return
 
-        elif data[:4] != b'SARC':
+        data = DecompYaz0(data)
+        if data[:4] != b'SARC':
             return
 
         archive = SarcLib.SARC_Archive(data)
@@ -104,13 +105,7 @@ class MainWindow(QtWidgets.QMainWindow):
             newArchive.addFile(file)
 
         outFile = newArchive.save()[0]
-
-        if self.currentFilePath[-4:] == ".szs":
-            CompYaz0(outFile, self.currentFilePath)
-
-        else:
-            with open(self.currentFilePath, 'wb+') as f:
-                f.write(outFile)
+        CompYaz0(outFile, self.currentFilePath)
 
     def saveSarcAs(self):
         fileName = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file', '', 'Map files (*.szs)')[0]
@@ -118,8 +113,8 @@ class MainWindow(QtWidgets.QMainWindow):
             return
 
         self.currentFilePath = fileName
-        self.setWindowTitle('RouteEdit NSMBU - %s' % self.currentFilePath)
         self.saveSarc()
+        self.setWindowTitle('RouteEdit NSMBU - %s' % self.currentFilePath)
 
     def closeSarc(self):
         closeDialog = QtWidgets.QMessageBox
