@@ -1,9 +1,14 @@
-﻿"じゅうたん":Carpet
-"道":Dirt
-"雲":Cloud
+﻿"道":Road
 "雪":Snow
+"砂":Sand
+"氷":Ice - Unused
 "草":Grass
 "水":Water
-"樽":Wood
-"砂":Sand
+"雲":Cloud
+"砂間欠泉":Sand Geyser - Unused
 "マンタ":Mushroom
+"ビーチ":Beach - Unused
+"じゅうたん":Carpet
+"葉っぱ":Leaf - Unused
+"樽":Barrel
+"水間欠泉":Water Geyser - Unused

@@ -3,7 +3,7 @@ import RouteWidget
 import BossPathWidget
 import SarcLib
 import sys
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtWidgets, QtGui
 
 Qt = QtCore.Qt
 
@@ -92,7 +92,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def saveSarc(self):
         arcContents = self.editor.getDataFromWidgets()
-        newArchive = SarcLib.SARC_Archive()
+        newArchive = SarcLib.SARC_Archive(endianness='<')
 
         for file in arcContents:
             newArchive.addFile(file)
@@ -104,7 +104,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def saveSarcAs(self):
         arcContents = self.editor.getDataFromWidgets()
-        newArchive = SarcLib.SARC_Archive()
+        newArchive = SarcLib.SARC_Archive(endianness='<')
 
         for file in arcContents:
             newArchive.addFile(file)
