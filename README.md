@@ -8,7 +8,7 @@
 ### Usage
 * Run RouteEdit.py
 * Open a RouteInfo.sarc File
-* Use the `Node Unlocks` Tab to edit the avaiable nodes for each world
+* Use the `Node Unlocks` Tab to edit the available nodes for each world
 * Use the `Path Settings` Tab to edit the sound and action used for each path
 * Use the `Boss Path` Tab to edit the path the koopalings will take when walking across the map
 

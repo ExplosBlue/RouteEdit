@@ -10,20 +10,24 @@ class PointEditorWidget(QtWidgets.QWidget):
 
         self.archiveContents = []
         self.fileLoaded = False
-        self.currentLoadedFile = ""
-        self.selectedFile = ""
+        self.currentLoadedFile = ''
+        self.selectedFile = ''
         self.layout = QtWidgets.QVBoxLayout(self)
 
         # Create Widgets
         self.fileSelector = QtWidgets.QComboBox()
         self.scrollArea = QtWidgets.QScrollArea()
         self.pointEntries = PointEntryTable()
-        self.addRowButton = QtWidgets.QPushButton()
-        self.delRowButton = QtWidgets.QPushButton()
+        self.addRowButton = QtWidgets.QPushButton('Insert Row')
+        self.delRowButton = QtWidgets.QPushButton('Remove Row')
+        self.importButton = QtWidgets.QPushButton('Import')
+        self.exportButton = QtWidgets.QPushButton('Export')
 
         # Add Icons
         self.addRowButton.setIcon(QtGui.QIcon('RouteEditData/icons/plus.png'))
         self.delRowButton.setIcon(QtGui.QIcon('RouteEditData/icons/minus.png'))
+        self.importButton.setIcon(QtGui.QIcon('RouteEditData/icons/import.png'))
+        self.exportButton.setIcon(QtGui.QIcon('RouteEditData/icons/export.png'))
 
         # Default Widgets to disabled
         self.fileSelector.setDisabled(True)
@@ -37,15 +41,23 @@ class PointEditorWidget(QtWidgets.QWidget):
         self.fileSelector.currentIndexChanged.connect(self.fileIndexChanged)
         self.addRowButton.pressed.connect(self.addRow)
         self.delRowButton.pressed.connect(self.delRow)
+        self.importButton.pressed.connect(self.importData)
+        self.exportButton.pressed.connect(self.exportData)
 
         # add widgets to layout
-        hLayout = QtWidgets.QHBoxLayout()
-        hLayout.addWidget(self.fileSelector, 1, Qt.AlignVCenter)
-        hLayout.addWidget(self.addRowButton, 0, Qt.AlignVCenter)
-        hLayout.addWidget(self.delRowButton, 0, Qt.AlignVCenter)
+        topLayout = QtWidgets.QHBoxLayout()
+        topLayout.addWidget(self.fileSelector, 1, Qt.AlignVCenter)
+        topLayout.addWidget(self.importButton, 0, Qt.AlignVCenter)
+        topLayout.addWidget(self.exportButton, 0, Qt.AlignVCenter)
 
-        self.layout.addLayout(hLayout)
+        bottomLayout = QtWidgets.QHBoxLayout()
+        bottomLayout.addWidget(self.addRowButton, 1, Qt.AlignVCenter)
+        bottomLayout.addWidget(self.delRowButton, 1, Qt.AlignVCenter)
+        bottomLayout.insertStretch(2, 2)
+
+        self.layout.addLayout(topLayout)
         self.layout.addWidget(self.scrollArea)
+        self.layout.addLayout(bottomLayout)
 
     def loadData(self, archiveContents):
         self.archiveContents = archiveContents
@@ -68,8 +80,8 @@ class PointEditorWidget(QtWidgets.QWidget):
     def closeData(self):
         self.archiveContents = []
         self.fileLoaded = False
-        self.currentLoadedFile = ""
-        self.selectedFile = ""
+        self.currentLoadedFile = ''
+        self.selectedFile = ''
 
         self.pointEntries.clearTable()
 
@@ -80,7 +92,7 @@ class PointEditorWidget(QtWidgets.QWidget):
 
     def fileIndexChanged(self):
         # store the currently selected file's name
-        self.selectedFile = "point" + self.fileSelector.currentText() + ".csv"
+        self.selectedFile = 'point' + self.fileSelector.currentText() + '.csv'
 
         # check if a file is already open
         if self.fileLoaded:
@@ -133,6 +145,34 @@ class PointEditorWidget(QtWidgets.QWidget):
     def delRow(self):
         self.pointEntries.delRow()
 
+    def importData(self):
+        fileName = QtWidgets.QFileDialog.getOpenFileName(self, 'Import file', '', 'csv files (*.csv)')[0]
+
+        if fileName == '':
+            return
+
+        with open(fileName, 'rb') as f:
+            data = f.read()
+
+        self.pointEntries.saveContents()
+
+        for file in self.archiveContents:
+            if str(file.name) == self.currentLoadedFile:
+                file.data = data
+
+        self.pointEntries.clearTable()
+        self.loadSelectedFile()
+
+    def exportData(self):
+        file = self.pointEntries.saveContents()
+        path = QtWidgets.QFileDialog.getSaveFileName(self, 'Export file', '' +self.currentLoadedFile, 'csv files (*.csv)')[0]
+
+        if path == '':
+            return
+
+        with open(path, 'wb+') as f:
+            f.write(file.encode('shiftjis'))
+
 
 class PointEntryTable(QtWidgets.QTableWidget):
     def __init__(self):
@@ -147,15 +187,15 @@ class PointEntryTable(QtWidgets.QTableWidget):
         header = self.horizontalHeader()
         header.setStretchLastSection(True)
         header.setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
-        self.setHorizontalHeaderItem(0, QtWidgets.QTableWidgetItem("ID"))
-        self.setHorizontalHeaderItem(1, QtWidgets.QTableWidgetItem("Node Name"))
-        self.setHorizontalHeaderItem(2, QtWidgets.QTableWidgetItem("Node Flag"))
-        self.setHorizontalHeaderItem(3, QtWidgets.QTableWidgetItem("Node Unlocks"))
-        self.setHorizontalHeaderItem(4, QtWidgets.QTableWidgetItem("Path Unlocks"))
-        self.setHorizontalHeaderItem(5, QtWidgets.QTableWidgetItem("Secret Node Flag"))
-        self.setHorizontalHeaderItem(6, QtWidgets.QTableWidgetItem("Secret Node Unlocks"))
-        self.setHorizontalHeaderItem(7, QtWidgets.QTableWidgetItem("Secret Path Unlocks"))
-        self.setHorizontalHeaderItem(8, QtWidgets.QTableWidgetItem("Revealed Path Connections"))
+        self.setHorizontalHeaderItem(0, QtWidgets.QTableWidgetItem('ID'))
+        self.setHorizontalHeaderItem(1, QtWidgets.QTableWidgetItem('Node Name'))
+        self.setHorizontalHeaderItem(2, QtWidgets.QTableWidgetItem('Node Flag'))
+        self.setHorizontalHeaderItem(3, QtWidgets.QTableWidgetItem('Node Unlocks'))
+        self.setHorizontalHeaderItem(4, QtWidgets.QTableWidgetItem('Path Unlocks'))
+        self.setHorizontalHeaderItem(5, QtWidgets.QTableWidgetItem('Secret Node Flag'))
+        self.setHorizontalHeaderItem(6, QtWidgets.QTableWidgetItem('Secret Node Unlocks'))
+        self.setHorizontalHeaderItem(7, QtWidgets.QTableWidgetItem('Secret Path Unlocks'))
+        self.setHorizontalHeaderItem(8, QtWidgets.QTableWidgetItem('Revealed Path Connections'))
 
         # Hide Row Numbers
         self.verticalHeader().setVisible(False)
@@ -214,7 +254,7 @@ class PointEntryTable(QtWidgets.QTableWidget):
             outData.append(rowString)
             row += 1
 
-        outString = "\r\n".join(outData)
+        outString = '\r\n'.join(outData)
         return outString
 
     def clearTable(self):

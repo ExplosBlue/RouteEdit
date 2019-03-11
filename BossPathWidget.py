@@ -9,8 +9,8 @@ class BossPathEditorWidget(QtWidgets.QWidget):
 
         self.archiveContents = []
         self.fileLoaded = False
-        self.currentLoadedFile = ""
-        self.selectedFile = ""
+        self.currentLoadedFile = ''
+        self.selectedFile = ''
         self.layout = QtWidgets.QVBoxLayout(self)
 
         # Create Widgets
@@ -30,7 +30,10 @@ class BossPathEditorWidget(QtWidgets.QWidget):
         self.fileSelector.currentIndexChanged.connect(self.fileIndexChanged)
 
         # add widgets to layout
-        self.layout.addWidget(self.fileSelector)
+        topLayout = QtWidgets.QHBoxLayout()
+        topLayout.addWidget(self.fileSelector, 1, Qt.AlignVCenter)
+
+        self.layout.addLayout(topLayout)
         self.layout.addWidget(self.scrollArea)
 
     def loadData(self, archiveContents):
@@ -55,8 +58,8 @@ class BossPathEditorWidget(QtWidgets.QWidget):
     def closeData(self):
         self.archiveContents = []
         self.fileLoaded = False
-        self.currentLoadedFile = ""
-        self.selectedFile = ""
+        self.currentLoadedFile = ''
+        self.selectedFile = ''
 
         self.BossPathEntries.reset()
 
@@ -68,27 +71,27 @@ class BossPathEditorWidget(QtWidgets.QWidget):
     def fileIndexChanged(self):
 
         # store the currently selected file's name
-        self.selectedFile = self.fileSelector.currentText() + ".csv"
+        self.selectedFile = self.fileSelector.currentText() + '.csv'
 
         # check if a file is already open
         if self.fileLoaded:
             # if a file is already open, store the changes made and close the file
             self.storeChanges()
             self.BossPathEntries.reset()
-            self.loadDataFromFile()
+            self.loadSelectedFile()
         else:
-            self.loadDataFromFile()
+            self.loadSelectedFile()
 
-    def loadDataFromFile(self):
+    def loadSelectedFile(self):
 
         files = []
 
         # load the data for the file the user selected
         for file in self.archiveContents:
-            if file.name == "worldIn" + self.selectedFile:
+            if file.name == 'worldIn' + self.selectedFile:
                 files.append(file)
 
-            elif file.name == "toCastle" + self.selectedFile:
+            elif file.name == 'toCastle' + self.selectedFile:
                 files.append(file)
 
         self.BossPathEntries.populate(files)
@@ -102,16 +105,16 @@ class BossPathEditorWidget(QtWidgets.QWidget):
         i = 0
 
         for entry in data:
-            if str(entry) == "worldIn":
+            if str(entry) == 'worldIn':
                 for file in self.archiveContents:
-                    if str(file.name) == "worldIn" + self.currentLoadedFile:
+                    if str(file.name) == 'worldIn' + self.currentLoadedFile:
                         d = str(data[i + 1])
                         d = d.encode('shiftjis')
                         file.data = d
 
-            elif str(entry) == "toCastle":
+            elif str(entry) == 'toCastle':
                 for file in self.archiveContents:
-                    if str(file.name) == "toCastle" + self.currentLoadedFile:
+                    if str(file.name) == 'toCastle' + self.currentLoadedFile:
                         d = str(data[i + 1])
                         d = d.encode('shiftjis')
                         file.data = d
@@ -126,7 +129,7 @@ class BossPathEditorWidget(QtWidgets.QWidget):
 class BossPathEntryContainer(QtWidgets.QWidget):
     def __init__(self, parent=None):
         QtWidgets.QWidget.__init__(self, parent=parent)
-        self.layout = QtWidgets.QVBoxLayout(self)
+        self.layout = QtWidgets.QHBoxLayout(self)
 
         self.worldInEntries = []
         self.toCastleEntries = []
@@ -134,19 +137,22 @@ class BossPathEntryContainer(QtWidgets.QWidget):
     def populate(self, files):
 
         for file in files:
-            if not str(file.name).find("worldIn"):
+            if not str(file.name).find('worldIn'):
                 data = file.data
                 data = data.decode('shiftjis')
-                worldIn = WorldInEntry(data)
-                self.layout.addWidget(worldIn)
+                worldIn = BossPathEntry(data, "World Into")
+                self.layout.addWidget(worldIn, 0, Qt.AlignTop)
                 self.worldInEntries.append(worldIn)
 
-            if not str(file.name).find("toCastle"):
+            if not str(file.name).find('toCastle'):
                 data = file.data
                 data = data.decode('shiftjis')
-                toCastle = ToCastleEntry(data)
-                self.layout.addWidget(toCastle)
+                toCastle = BossPathEntry(data, "From Tower")
+                self.layout.addWidget(toCastle, 0, Qt.AlignTop)
                 self.toCastleEntries.append(toCastle)
+
+        if not self.toCastleEntries:
+            self.layout.insertStretch(1, 0)
 
     def bossPathToArray(self):
         temp = []
@@ -177,27 +183,34 @@ class BossPathEntryContainer(QtWidgets.QWidget):
                 self.clearLayout(child.layout())
 
 
-class WorldInEntry(QtWidgets.QWidget):
-    def __init__(self, data, parent=None):
+class BossPathEntry(QtWidgets.QFrame, QtWidgets.QWidget):
+    def __init__(self, data, name, parent=None):
+        QtWidgets.QFrame.__init__(self, parent=parent)
         QtWidgets.QWidget.__init__(self, parent=parent)
-        self.layout = QtWidgets.QHBoxLayout(self)
+
+        self.setFrameShape(QtWidgets.QFrame.StyledPanel)
+
+        self.layout = QtWidgets.QVBoxLayout(self)
+        headerLayout = QtWidgets.QHBoxLayout()
 
         self.entries = []
 
-        worldInLabel = QtWidgets.QLabel("WorldIn")
-        self.layout.addWidget(worldInLabel)
+        nameLabel = QtWidgets.QLabel(name)
+        headerLayout.addWidget(nameLabel)
 
-        addEntryBtn = QtWidgets.QPushButton("+")
+        addEntryBtn = QtWidgets.QPushButton('Insert Node')
+        addEntryBtn.setIcon(QtGui.QIcon('RouteEditData/icons/plus.png'))
         addEntryBtn.pressed.connect(self.addNewEntry)
 
-        removeEntryBtn = QtWidgets.QPushButton("-")
+        removeEntryBtn = QtWidgets.QPushButton('Remove Node')
+        removeEntryBtn.setIcon(QtGui.QIcon('RouteEditData/icons/minus.png'))
         removeEntryBtn.pressed.connect(self.removeEntry)
 
-        buttonLayout = QtWidgets.QVBoxLayout()
-        buttonLayout.addWidget(addEntryBtn)
-        buttonLayout.addWidget(removeEntryBtn)
+        # buttonLayout = QtWidgets.QVBoxLayout()
+        headerLayout.addWidget(addEntryBtn)
+        headerLayout.addWidget(removeEntryBtn)
 
-        self.layout.addLayout(buttonLayout)
+        self.layout.addLayout(headerLayout)
 
         data = str(data).split(',')
 
@@ -205,74 +218,6 @@ class WorldInEntry(QtWidgets.QWidget):
             lineEdit = QtWidgets.QLineEdit(i)
             self.entries.append(lineEdit)
             self.layout.addWidget(lineEdit)
-
-        self.setMaximumHeight(75)
-
-        # set background colour
-        pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, QtGui.QColor(249, 249, 249))
-        self.setAutoFillBackground(True)
-        self.setPalette(pal)
-
-    def valuesToString(self):
-        temp = []
-
-        for lineEdit in self.entries:
-            temp.append(lineEdit.text())
-
-        output = ','.join(temp)
-        output.encode('shiftjis')
-
-        return output
-
-    def addNewEntry(self):
-        lineEdit = QtWidgets.QLineEdit()
-        self.entries.append(lineEdit)
-        self.layout.addWidget(lineEdit)
-
-    def removeEntry(self):
-        if len(self.entries) >= 2:
-            if self.entries[-1] is not None:
-                self.entries[-1].deleteLater()
-            self.entries = self.entries[:-1]
-
-
-class ToCastleEntry(QtWidgets.QWidget):
-    def __init__(self, data, parent=None):
-        QtWidgets.QWidget.__init__(self, parent=parent)
-        self.layout = QtWidgets.QHBoxLayout(self)
-
-        self.entries = []
-
-        toCastleLabel = QtWidgets.QLabel("toCastle")
-        self.layout.addWidget(toCastleLabel)
-
-        addEntryBtn = QtWidgets.QPushButton("+")
-        addEntryBtn.pressed.connect(self.addNewEntry)
-
-        removeEntryBtn = QtWidgets.QPushButton("-")
-        removeEntryBtn.pressed.connect(self.removeEntry)
-
-        buttonLayout = QtWidgets.QVBoxLayout()
-        buttonLayout.addWidget(addEntryBtn)
-        buttonLayout.addWidget(removeEntryBtn)
-
-        self.layout.addLayout(buttonLayout)
-
-        data = str(data).split(',')
-
-        for i in data:
-            lineEdit = QtWidgets.QLineEdit(i)
-            self.entries.append(lineEdit)
-            self.layout.addWidget(lineEdit)
-
-        self.setMaximumHeight(75)
-
-        # set background colour
-        pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, QtGui.QColor(249, 249, 249))
-        self.setAutoFillBackground(True)
-        self.setPalette(pal)
 
     def valuesToString(self):
         temp = []

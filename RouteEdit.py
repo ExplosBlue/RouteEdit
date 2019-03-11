@@ -111,14 +111,17 @@ class MainWindow(QtWidgets.QMainWindow):
 
         outFile = newArchive.save()[0]
 
-        fileName = QtWidgets.QFileDialog.getSaveFileName(self, 'Open file', '', 'SARC files (*.sarc)')[0]
+        fileName = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file', '', 'SARC files (*.sarc)')[0]
+
+        if fileName == '':
+            return
 
         with open(fileName, 'wb+') as f:
             f.write(outFile)
 
     def closeSarc(self):
         closeDialog = QtWidgets.QMessageBox
-        ret = closeDialog.question(self, '', "Close the current file?", closeDialog.Yes | closeDialog.No)
+        ret = closeDialog.question(self, '', 'Close the current file?', closeDialog.Yes | closeDialog.No)
 
         if ret == closeDialog.Yes:
             self.editor.closeFile()
